@@ -10,16 +10,19 @@ svg_anim.mk: $(SVGS)
 	echo "PDFS :=" >>$@; \
 	echo "PNGS :=" >>$@; \
 	for svg in $(SVGS); do \
+	  mpdf=$${svg%.svg}.pdf; \
+	  echo ""; \
+	  echo "PDFS += $$mpdf"; \
 	  cnt=0; \
 	  python3 $(ANIM_DIR)/get_anim_layers.py $$svg | while read line; do \
 	    pdf=$${svg%.svg}.$$cnt.pdf; \
 	    png=$${svg%.svg}.$$cnt.png; \
 	    echo ""; \
-	    echo "PDFS += $$pdf"; \
 	    echo "PNGS += $$png"; \
+	    echo "$$mpdf: $$pdf"; \
 	    echo "$$pdf $$png: $$svg"; \
 	    printf '\tinkscape --actions="%s %s %s" $$<\n' \
-			       "select-all:layers; selection-hide; select-clear;" \
+	           "select-all:layers; selection-hide; select-clear;" \
 	           "`echo $$line | sed 's/\([^ ]*\) */select-by-id:\1; /g'`selection-unhide;" \
 	           "export-area-page; export-filename:\$$@; export-do"; \
 	    cnt=$$((cnt+1)); \
@@ -33,3 +36,7 @@ all: pdf png
 
 pdf: $(PDFS)
 png: $(PNGS)
+
+$(PDFS):
+	pdfunite $^ $@
+	rm $^
